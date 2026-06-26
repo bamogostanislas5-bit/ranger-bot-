@@ -121,6 +121,7 @@ def repondre_demande_matchs(message):
 # 🚀 DEMARRAGE
 # =====================================================================
 if __name__ == "__main__":
+    bot.remove_webhook()
     t_web = threading.Thread(target=run_web_server)
     t_web.daemon = True
     t_web.start()
