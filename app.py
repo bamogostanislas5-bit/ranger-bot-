@@ -1,3 +1,4 @@
+import os
 import time
 import requests
 import telebot
@@ -8,7 +9,7 @@ from flask import Flask
 # 🪖 CONFIGURATION DU RANGER
 # =====================================================================
 API_SPORTS_KEY = "4eda851ae21c8246a93fe0032bdbb36a"
-TELEGRAM_TOKEN = "8504686138:AAEfn0qkyfipB7tYhndv9cvjKn-NkGIb4Ms"
+TELEGRAM_TOKEN = os.environ.get("BOT_TOKEN")
 CHALLENGER_CHAT_ID = "7492611827"
 
 BANKROLL_TOTALE = 20000  
