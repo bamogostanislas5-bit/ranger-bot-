@@ -1,3 +1,6 @@
 Flask
 requests 
 pyTelegramBotAPI 
+scikit-learn
+numpy
+pandas
