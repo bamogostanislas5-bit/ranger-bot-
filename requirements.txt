@@ -1,6 +1,6 @@
+pyTelegramBotAPI
+requests
 Flask
-requests 
-pyTelegramBotAPI 
 scikit-learn
 numpy
 pandas
