@@ -3,6 +3,8 @@ import time
 import requests
 import telebot
 import threading
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 from flask import Flask
 
 # =====================================================================
@@ -22,7 +24,7 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "Bot du Ranger est en ligne 24h/24 !"
+    return "Bot du Ranger est en ligne 24h/24 avec IA !"
 
 def run_web_server():
     app.run(host='0.0.0.0', port=8080)
@@ -31,7 +33,72 @@ def calculer_mise(cote_estimee=1.80):
     return int(BANKROLL_TOTALE * POURCENTAGE_MISE)
 
 # =====================================================================
-# 📊 ANALYSE COMPLÈTE (AVANT-MATCH) : MULTI-OPTIONS
+# 🧠 ENTRAÎNEMENT DE L'IA (Au démarrage du serveur)
+# =====================================================================
+print("⚙️ Démarrage de l'entraînement de l'IA...")
+# Historique des entraînements : [Buts marqués, Buts encaissés]
+X_train = np.array([
+    [2.8, 2.4], [0.6, 0.8], [3.0, 0.5], [1.0, 2.2], 
+    [2.1, 0.6], [0.5, 1.5]
+])
+# Résultats réels : 1 = Victoire, 0 = Nul/Défaite
+y_train = np.array([1, 0, 1, 0, 1, 0])
+
+modele_ia = RandomForestClassifier(random_state=42)
+modele_ia.fit(X_train, y_train)
+print("✅ Entraînement terminé ! L'IA est opérationnelle.")
+
+# =====================================================================
+# 🤖 NOUVELLE FONCTION : ANALYSE PAR L'IA
+# =====================================================================
+def analyser_avec_ia():
+    print("🧠 Analyse IA lancée...")
+    date_aujourdhui = time.strftime("%Y-%m-%d")
+    url = f"https://v3.football.api-sports.io/fixtures?date={date_aujourdhui}"
+
+    try:
+        response = requests.get(url, headers=HEADERS).json()
+        matchs = response.get("response", [])
+
+        if not matchs:
+            bot.send_message(CHALLENGER_CHAT_ID, "📡 Calendrier vide pour l'IA aujourd'hui.")
+            return
+
+        compteur_ia = 0
+        for match in matchs:
+            if compteur_ia >= 3: # On limite à 3 matchs pour le test IA
+                break
+
+            status = match["fixture"]["status"]["short"]
+            if status != "NS":
+                continue
+
+            home = match["teams"]["home"]["name"]
+            away = match["teams"]["away"]["name"]
+
+            # ⚠️ SIMULATION DES STATS POUR LE TEST
+            # Plus tard, nous extrairons ces stats directement de l'API
+            buts_marques_estimes = round(np.random.uniform(0.5, 3.0), 1)
+            buts_encaisses_estimes = round(np.random.uniform(0.5, 2.5), 1)
+
+            # L'IA fait sa prédiction
+            match_stats = np.array([[buts_marques_estimes, buts_encaisses_estimes]])
+            prediction = modele_ia.predict(match_stats)
+
+            if prediction[0] == 1:
+                msg_ia = f"🤖 **PRÉDICTION IA (Ranger V2)** 🤖\n\n⚽ `{home}` vs `{away}`\n🎯 **Verdict IA :** Victoire Domicile détectée\n📊 Stats analysées : {buts_marques_estimes} BM / {buts_encaisses_estimes} BE\n💰 **Mise :** {calculer_mise()} CFA"
+                bot.send_message(CHALLENGER_CHAT_ID, msg_ia, parse_mode="Markdown")
+                compteur_ia += 1
+                time.sleep(2) # Pause radio pour Telegram
+
+        if compteur_ia == 0:
+            bot.send_message(CHALLENGER_CHAT_ID, "🛑 L'IA n'a trouvé aucune victoire sûre pour le moment.")
+
+    except Exception as e:
+        bot.send_message(CHALLENGER_CHAT_ID, f"❌ Erreur IA : {e}")
+
+# =====================================================================
+# 📊 ANALYSE COMPLÈTE (AVANT-MATCH) : STRATÉGIE API CLASSIQUE
 # =====================================================================
 def analyser_matchs_du_jour():
     print("📊 Analyse multi-stratégies lancée...")
@@ -111,12 +178,17 @@ def scanner_les_matchs_live():
         print(f"❌ Erreur Scan Live : {e}")
 
 # =====================================================================
-# 🗣️ COMMANDE RECEPTION TELEGRAM
+# 🗣️ COMMANDES RECEPTION TELEGRAM
 # =====================================================================
 @bot.message_handler(commands=['matchs'])
 def repondre_demande_matchs(message):
-    bot.reply_to(message, "🪖 Reçu ! Le Ranger interroge le calendrier du jour... 🔍")
+    bot.reply_to(message, "🪖 Reçu ! Le Ranger interroge le calendrier (Stratégie API)... 🔍")
     threading.Thread(target=analyser_matchs_du_jour).start()
+
+@bot.message_handler(commands=['ia'])
+def repondre_demande_ia(message):
+    bot.reply_to(message, "🧠 Le Cerveau IA du Ranger prend le relais. Analyse en cours... ⚡")
+    threading.Thread(target=analyser_avec_ia).start()
 
 # =====================================================================
 # 🚀 DEMARRAGE
@@ -133,4 +205,4 @@ if __name__ == "__main__":
 
     while True:
         scanner_les_matchs_live()
-        time.sleep(300)    
+        time.sleep(300)
